@@ -12,58 +12,22 @@ pinned: false
 
 # Multi-Agent Customer Support System
 
-A production-grade, **LangGraph-powered hierarchical multi-agent assistant** for a digital music store. It combines a **Supervisor router**, two specialized **ReAct sub-agents** (music catalog + invoice information), **human-in-the-loop identity verification**, **long-term per-customer memory**, and a **Gradio chat UI** — all backed by a real relational schema (the Chinook sample database).
+A production-grade, **LangGraph-powered hierarchical multi-agent assistant** for a digital music store. It combines a **Supervisor router**, two specialized **ReAct sub-agents** (music catalog + invoice information), **human-in-the-loop identity verification**, **long-term per-customer memory**, and a **Gradio chat UI** - all backed by a real relational schema (the Chinook sample database).
 
-**Author:** Animesh Kumar — sole author and maintainer.
-**Repository:** [github.com/ANI-IN/Multi-Agent-Customer-Support](https://github.com/ANI-IN/Multi-Agent-Customer-Support)
 **Live Demo:** [huggingface.co/spaces/animeshkcm/Multi-Agent-Customer-Support](https://huggingface.co/spaces/animeshkcm/Multi-Agent-Customer-Support)
-
----
-
-## Table of Contents
-
-- [Capstone Framing](#capstone-framing)
-  - [Problem Statement](#problem-statement)
-  - [Business Use Case](#business-use-case)
-  - [Why This Matters for AI Engineers](#why-this-matters-for-ai-engineers)
-  - [Technical Complexity](#technical-complexity)
-  - [The Engineering Challenge](#the-engineering-challenge)
-- [System Architecture](#system-architecture)
-- [Pipeline Overview](#pipeline-overview)
-- [LangGraph State Machine](#langgraph-state-machine)
-- [Data Flow](#data-flow)
-- [Technology Stack](#technology-stack)
-- [Project Structure](#project-structure)
-- [Application Flow (Gradio UI)](#application-flow-gradio-ui)
-- [Pipeline Stages](#pipeline-stages)
-- [Getting Started](#getting-started)
-  - [Prerequisites](#prerequisites)
-  - [Quick Start](#quick-start)
-  - [Sample Dataset](#sample-dataset)
-  - [Developer Commands](#developer-commands)
-- [Configuration](#configuration)
-  - [LLM Provider (Pick One)](#llm-provider-pick-one)
-- [Tools Reference](#tools-reference)
-- [Prompt Engineering & Anti-Hallucination](#prompt-engineering--anti-hallucination)
-- [Security](#security)
-- [Testing](#testing)
-- [Deployment](#deployment)
-- [Troubleshooting](#troubleshooting)
-- [Roadmap](#roadmap)
-- [License](#license)
 
 ---
 
 ## Capstone Framing
 
-This project is deliberately structured as an **advanced AI engineering capstone** rather than a demo. It is not just "an agent that calls tools" — it is a fully assembled **multi-agent system** with state, memory, safety, determinism, and real-world data. Every non-trivial decision (grounding rules, memory merge semantics, supervisor routing, verification gating, deterministic SQL) is traceable to a specific failure mode in production LLM systems.
+This project is designed as an advanced AI engineering capstone, going beyond a simple agent or tool-calling demo. It represents a fully assembled multi-agent AI system incorporating structured state management, persistent memory, safety controls, deterministic execution, and real-world data integration. Each architectural decision such as grounding rules, memory merge semantics, supervisor-based routing, verification gating, and deterministic SQL generation directly addresses known failure modes observed in production-scale LLM systems.
 
 ### Problem Statement
 
 Customer support for a catalog-and-billing business has two opposing requirements:
 
-1. **Conversational flexibility** — customers ask in free-form natural language (“what's my most expensive track?”, “any rock albums from AC/DC?”).
-2. **Operational correctness** — invoice totals, track IDs, and customer accounts must be exact, auditable, and access-controlled.
+1. **Conversational flexibility** - customers ask in free-form natural language (“what's my most expensive track?”, “any rock albums from AC/DC?”).
+2. **Operational correctness** - invoice totals, track IDs, and customer accounts must be exact, auditable, and access-controlled.
 
 A single LLM with a single system prompt cannot satisfy both: it will either hallucinate when asked for unavailable data, or leak account data across customers, or route off-topic questions to SQL tools. This project solves that gap with a **hierarchical agent graph** where each responsibility is isolated into its own node.
 
@@ -83,7 +47,7 @@ The project exercises the full surface area an AI engineer ships in production:
 
 - **Graph-native orchestration** (not a flat ReAct loop) with conditional edges, interrupts, and a supervisor router.
 - **Typed shared state** (`TypedDict` + `add_messages` reducer) instead of ad-hoc dicts.
-- **Structured LLM output** (Pydantic schemas) for identifier extraction and preference capture — no regex parsing of model text.
+- **Structured LLM output** (Pydantic schemas) for identifier extraction and preference capture - no regex parsing of model text.
 - **Prompt engineering as a contract**: every sub-agent prompt enforces explicit grounding, exact quoting, and scope boundaries.
 - **Deterministic SQL under an LLM** (CTE + `ROW_NUMBER()`) so the same question returns the same answer.
 - **Two memory modes**: short-term per-thread (`MemorySaver` checkpointer) and long-term per-customer (`InMemoryStore`).
@@ -257,7 +221,7 @@ stateDiagram-v2
     music_assistant --> [*]: should_continue == end<br/>(no tool_calls)
 ```
 
-**Invoice sub-agent** is built via `langgraph.prebuilt.create_react_agent` — same pattern, wrapped for you.
+**Invoice sub-agent** is built via `langgraph.prebuilt.create_react_agent` - same pattern, wrapped for you.
 
 ---
 
@@ -342,13 +306,13 @@ flowchart LR
 | Core Framework | langchain + langchain-core + langchain-community | 1.0+ / 0.4+ | Messages, tools, SQLDatabase utility |
 | Data Validation | Pydantic | v2+ | `UserInput`, `UserProfile` schemas |
 | Database Engine | SQLAlchemy | 2.0+ | In-memory SQLite via `StaticPool` |
-| Dataset | Chinook | — | Customers, invoices, tracks, albums, artists |
-| Checkpointer | `langgraph.checkpoint.memory.MemorySaver` | — | Per-thread short-term state |
-| Store | `langgraph.store.memory.InMemoryStore` | — | Per-customer long-term memory |
+| Dataset | Chinook | - | Customers, invoices, tracks, albums, artists |
+| Checkpointer | `langgraph.checkpoint.memory.MemorySaver` | - | Per-thread short-term state |
+| Store | `langgraph.store.memory.InMemoryStore` | - | Per-customer long-term memory |
 | Env Config | python-dotenv | 1.0+ | Loads `.env` |
 | HTTP | requests | 2.31+ | One-shot SQL script fetch |
 | Packaging | Docker | 3.12-slim | Reproducible deploy |
-| Hosting | Hugging Face Spaces | — | YAML-frontmatter driven |
+| Hosting | Hugging Face Spaces | - | YAML-frontmatter driven |
 
 ---
 
@@ -391,12 +355,12 @@ Multi-Agent-Customer-Support/
 
 **Key files to read in order when grokking the repo:**
 
-1. `src/state.py` — the shared contract.
-2. `src/agents/graph.py` — how the whole thing is wired.
-3. `src/agents/nodes.py` — what each node does.
-4. `src/agents/prompts.py` — the behavioral contract for every LLM call.
-5. `src/tools/*.py` — the data surface.
-6. `src/ui/app.py` — how streaming + interrupts are surfaced.
+1. `src/state.py` - the shared contract.
+2. `src/agents/graph.py` - how the whole thing is wired.
+3. `src/agents/nodes.py` - what each node does.
+4. `src/agents/prompts.py` - the behavioral contract for every LLM call.
+5. `src/tools/*.py` - the data surface.
+6. `src/ui/app.py` - how streaming + interrupts are surfaced.
 
 ---
 
@@ -438,7 +402,7 @@ Every browser session is assigned a UUID `thread_id` stored in `gr.State`. This 
 
 Each node is a pure function over `State` (plus optional `store`/`config`). Stages in execution order:
 
-### 1. `verify_info` — Identity Gate
+### 1. `verify_info` - Identity Gate
 - **Input:** `messages`, maybe existing `customer_id`.
 - **If already verified:** no-op pass-through.
 - **Else:** calls `llm.with_structured_output(UserInput)` to pull one identifier (ID / email / phone). Runs a parameterized SQL lookup:
@@ -448,15 +412,15 @@ Each node is a pure function over `State` (plus optional `store`/`config`). Stag
 - **If found:** writes `customer_id` and a `SystemMessage` announcing the verified ID.
 - **If not found:** invokes a polite re-prompt LLM using `VERIFICATION_PROMPT`.
 
-### 2. `human_input` — Interrupt
+### 2. `human_input` - Interrupt
 - Calls LangGraph `interrupt("Please provide input.")`. The UI receives this via `snapshot.next` and pauses the turn. When the user replies, the graph resumes and loops back to `verify_info`.
 
-### 3. `load_memory` — Preference Hydration
+### 3. `load_memory` - Preference Hydration
 - Reads `("memory_profile", customer_id)` from `InMemoryStore`.
 - Formats as `"Music Preferences: rock, AC/DC, jazz"` and sets `loaded_memory`.
 - The music agent's prompt interpolates this string so it can personalize without re-asking.
 
-### 4. `supervisor` — Hierarchical Router
+### 4. `supervisor` - Hierarchical Router
 - Built via `langgraph_supervisor.create_supervisor`.
 - Routing rules (encoded in `SUPERVISOR_PROMPT`):
   - music/catalog → `music_catalog_subagent`
@@ -465,16 +429,16 @@ Each node is a pure function over `State` (plus optional `store`/`config`). Stag
   - off-topic → direct refusal, no sub-agent invoked
 - Merges sub-agent outputs into a single coherent response. Never adds information not present in sub-agent outputs.
 
-### 5a. `music_catalog_subagent` — Hand-Built ReAct
+### 5a. `music_catalog_subagent` - Hand-Built ReAct
 - Custom `StateGraph` with two nodes: `music_assistant` (LLM with bound tools) and `music_tool_node` (`ToolNode(music_tools)`).
 - Conditional edge `should_continue` loops until there are no `tool_calls` left.
 - System prompt is generated per call via `generate_music_assistant_prompt(loaded_memory)` so preferences are fresh.
 
-### 5b. `invoice_information_subagent` — Prebuilt ReAct
+### 5b. `invoice_information_subagent` - Prebuilt ReAct
 - Built via `langgraph.prebuilt.create_react_agent(llm, tools=invoice_tools, prompt=INVOICE_SUBAGENT_PROMPT, state_schema=State)`.
 - Prompt explicitly tells it to use the **verified** `customer_id` from the `SystemMessage`, not any ID the user mentions.
 
-### 6. `create_memory` — Preference Capture
+### 6. `create_memory` - Preference Capture
 - Summarizes last 10 messages.
 - `llm.with_structured_output(UserProfile)` extracts **explicit** preferences.
 - Unions with existing preferences; if the LLM returns empty but there are existing preferences, the write is **skipped** (never erases).
@@ -535,9 +499,9 @@ The app boots against the [Chinook sample database](https://github.com/lerocha/c
 | InvoiceLine | 2,240 | Each row = one purchased track |
 | Track | 3,503 | `AlbumId`, `GenreId`, `MediaTypeId`, `UnitPrice` |
 | Album | 347 | `ArtistId` FK |
-| Artist | 275 | — |
-| Genre | 25 | — |
-| MediaType | 5 | — |
+| Artist | 275 | - |
+| Genre | 25 | - |
+| MediaType | 5 | - |
 | Playlist / PlaylistTrack | 18 / 8,715 | Not currently exposed as tools |
 
 ### Developer Commands
@@ -571,8 +535,8 @@ All configuration is env-driven. `src/config.py` loads `.env` once at import tim
 
 | Variable | Required | Default | Purpose |
 |---|---|---|---|
-| `OPENAI_API_KEY` | yes | — | API key for the LLM provider |
-| `OPENAI_API_BASE` | no | — | Override base URL for non-OpenAI providers |
+| `OPENAI_API_KEY` | yes | - | API key for the LLM provider |
+| `OPENAI_API_BASE` | no | - | Override base URL for non-OpenAI providers |
 | `MODEL_NAME` | no | `gpt-4o-mini` | Chat model name |
 | `TEMPERATURE` | no | `0` | `0` = fully deterministic routing |
 | `PORT` | no | `7860` | Gradio port |
@@ -663,12 +627,12 @@ All tool inputs pass through `_safe_int()` for numeric args. All return values a
 
 Grounding rules (applied to every sub-agent prompt in `src/agents/prompts.py`):
 
-1. **Tool-only** — never answer from model memory; always call a tool first.
-2. **Exact quoting** — no rounding, no estimating, no "about".
-3. **Honest failures** — "I could not find that in our catalog." is the literal fallback.
-4. **Scope boundaries** — each sub-agent explicitly refuses out-of-scope queries and defers.
-5. **Truncation transparency** — when results are sampled (LIMIT), say so and include the total.
-6. **No invented IDs** — the invoice agent is told to read the verified `customer_id` from the `SystemMessage`, not from user text.
+1. **Tool-only** - never answer from model memory; always call a tool first.
+2. **Exact quoting** - no rounding, no estimating, no "about".
+3. **Honest failures** - "I could not find that in our catalog." is the literal fallback.
+4. **Scope boundaries** - each sub-agent explicitly refuses out-of-scope queries and defers.
+5. **Truncation transparency** - when results are sampled (LIMIT), say so and include the total.
+6. **No invented IDs** - the invoice agent is told to read the verified `customer_id` from the `SystemMessage`, not from user text.
 
 Memory rules (`CREATE_MEMORY_PROMPT`):
 
