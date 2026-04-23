@@ -10,16 +10,16 @@ class TestRunQuerySafe:
         result = run_query_safe("SELECT COUNT(*) AS cnt FROM Customer;")
         data = json.loads(result)
         assert len(data) == 1
-        assert data[0]["cnt"] == 59
+        assert data[0]["cnt"] >= 2
 
     def test_parameterized_query(self):
         result = run_query_safe(
             "SELECT FirstName FROM Customer WHERE CustomerId = :cid",
-            {"cid": 1},
+            {"cid": 5},
         )
         data = json.loads(result)
         assert len(data) == 1
-        assert data[0]["FirstName"] is not None
+        assert data[0]["FirstName"] == "Rajesh"
 
     def test_empty_result(self):
         result = run_query_safe(
@@ -29,12 +29,12 @@ class TestRunQuerySafe:
         assert result == "[]"
 
     def test_returns_valid_json(self):
-        result = run_query_safe("SELECT AlbumId, Title FROM Album LIMIT 3;")
+        result = run_query_safe("SELECT ProductId, Name FROM Product LIMIT 3;")
         data = json.loads(result)
         assert isinstance(data, list)
         assert len(data) == 3
-        assert "AlbumId" in data[0]
-        assert "Title" in data[0]
+        assert "ProductId" in data[0]
+        assert "Name" in data[0]
 
 
 class TestNormalizePhone:

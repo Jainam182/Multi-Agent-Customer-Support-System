@@ -13,31 +13,16 @@ logger = logging.getLogger(__name__)
 _engine = None
 _db = None
 
-CHINOOK_SQL_URL = (
-    "https://raw.githubusercontent.com/lerocha/chinook-database/"
-    "master/ChinookDatabase/DataSources/Chinook_Sqlite.sql"
-)
-
-# Use project root for the cached SQL file
-LOCAL_SQL_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "Chinook_Sqlite.sql")
-
+# Use project root for the custom SQL file
+LOCAL_SQL_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "ahc_sqlite.sql")
 
 def _load_sql_script() -> str:
     if os.path.isfile(LOCAL_SQL_PATH):
-        logger.info(f"Loading Chinook SQL from local file: {LOCAL_SQL_PATH}")
+        logger.info(f"Loading Healthcare SQL from local file: {LOCAL_SQL_PATH}")
         with open(LOCAL_SQL_PATH, "r", encoding="utf-8") as f:
             return f.read()
-    logger.info("Local SQL file not found. Downloading from GitHub...")
-    response = requests.get(CHINOOK_SQL_URL, timeout=60)
-    response.raise_for_status()
-    sql_script = response.text
-    try:
-        with open(LOCAL_SQL_PATH, "w", encoding="utf-8") as f:
-            f.write(sql_script)
-        logger.info(f"Cached SQL script to {LOCAL_SQL_PATH}")
-    except Exception as e:
-        logger.warning(f"Could not cache SQL script locally: {e}")
-    return sql_script
+    else:
+        raise FileNotFoundError(f"Database setup script not found at {LOCAL_SQL_PATH}")
 
 
 def _create_engine():

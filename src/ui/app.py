@@ -1,4 +1,4 @@
-"""Gradio application for the Music Store Multi-Agent System."""
+"""Gradio application for the Arihant Healthcare Multi-Agent System."""
 
 import uuid
 import time
@@ -23,7 +23,7 @@ _store = None
 def initialize():
     global _graph, _checkpointer, _store
 
-    logger.info("Initializing Music Store Agent...")
+    logger.info("Initializing Healthcare Agent...")
 
     db_health = verify_database()
     if db_health.get("status") != "healthy":
@@ -35,8 +35,7 @@ def initialize():
         _graph, _checkpointer, _store = build_graph(
             model_name=settings.model_name,
             temperature=settings.temperature,
-            openai_api_key=settings.openai_api_key or None,
-            openai_api_base=settings.openai_api_base or None,
+            groq_api_key=settings.groq_api_key or None,
         )
         logger.info("Agent graph built successfully.")
     except Exception as e:
@@ -108,7 +107,7 @@ def generate_response(history, tid):
         history.append({"role": "assistant", "content": "System not initialized. Please refresh the page."})
         return history, tid, _status_html("error", "System not initialized")
 
-    config = {"configurable": {"thread_id": tid}}
+    config = {"configurable": {"thread_id": tid}, "recursion_limit": 25}
 
     try:
         start_time = time.time()
@@ -121,10 +120,10 @@ def generate_response(history, tid):
             for node_name, node_output in event.items():
                 logger.info(f"Graph event: node={node_name}")
 
-                if node_name in ("music_tool_node",):
-                    tools_used.append("music_catalog")
-                elif node_name == "invoice_information_subagent":
-                    tools_used.append("invoice_lookup")
+                if node_name in ("equipment_tool_node",):
+                    tools_used.append("equipment_catalog")
+                elif node_name == "order_information_subagent":
+                    tools_used.append("order_lookup")
 
                 if isinstance(node_output, dict) and "messages" in node_output:
                     for msg in node_output["messages"]:
@@ -173,15 +172,15 @@ def generate_response(history, tid):
 def create_app() -> gr.Blocks:
     initialize()
 
+    theme = gr.themes.Soft(
+        primary_hue="emerald",
+        secondary_hue="slate",
+        neutral_hue="slate",
+        font=gr.themes.GoogleFont("Inter"),
+    )
+
     with gr.Blocks(
         title=settings.app_title,
-        css=CUSTOM_CSS,
-        theme=gr.themes.Soft(
-            primary_hue="blue",
-            secondary_hue="slate",
-            neutral_hue="slate",
-            font=gr.themes.GoogleFont("Inter"),
-        ),
     ) as app:
 
         thread_id = gr.State(value="")
@@ -197,14 +196,13 @@ def create_app() -> gr.Blocks:
 
         chatbot = gr.Chatbot(
             value=[],
-            type="messages",
             height=480,
             show_label=False,
-            avatar_images=(None, "https://api.dicebear.com/7.x/bottts/svg?seed=music"),
+            avatar_images=(None, "https://api.dicebear.com/7.x/bottts/svg?seed=jaina"),
             elem_classes=["chatbot-container"],
             placeholder=(
                 "**Welcome!** Type your message below to get started.\n\n"
-                "Try: *\"My customer ID is 5\"* or *\"What rock albums do you have?\"*"
+                "Try: *\"My customer ID is 5\"* or *\"Do you have oxygen concentrators?\"*"
             ),
         )
 
@@ -229,7 +227,7 @@ def create_app() -> gr.Blocks:
         gr.HTML(
             '<div class="app-footer">'
             'Powered by LangGraph Multi-Agent Architecture · '
-            'Data from Chinook Sample Database'
+            'Arihant Healthcare Support'
             '</div>'
         )
 
@@ -258,5 +256,9 @@ def create_app() -> gr.Blocks:
             inputs=[],
             outputs=[chatbot, thread_id, status],
         )
+
+    # Store these on the app object so root app.py can access them
+    app.custom_css = CUSTOM_CSS
+    app.custom_theme = theme
 
     return app

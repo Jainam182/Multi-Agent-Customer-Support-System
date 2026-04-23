@@ -12,14 +12,13 @@ logging.basicConfig(
 
 
 class Settings:
-    openai_api_key: str = os.getenv("OPENAI_API_KEY", "")
-    openai_api_base: str = os.getenv("OPENAI_API_BASE", "")
-    model_name: str = os.getenv("MODEL_NAME", "gpt-4o-mini")
+    groq_api_key: str = os.getenv("GROQ_API_KEY", "")
+    model_name: str = os.getenv("MODEL_NAME", "llama-3.1-8b-instant")
     temperature: float = float(os.getenv("TEMPERATURE", "0"))
     port: int = int(os.getenv("PORT", "7860"))
-    app_title: str = "Music Store Assistant"
+    app_title: str = "Arihant Healthcare Support AI"
     app_description: str = (
-        "Welcome! I can help you explore our music catalog, look up invoices, "
+        "Welcome! I am an intelligent multi-agent assistant designed to help you explore medical equipment, look up your orders, "
         "and find your purchase history. To access your account, please provide "
         "your Customer ID, email, or phone number."
     )

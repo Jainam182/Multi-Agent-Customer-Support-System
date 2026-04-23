@@ -15,7 +15,7 @@ class UserInput(BaseModel):
 
 class UserProfile(BaseModel):
     customer_id: str = Field(description="The customer ID of the customer")
-    music_preferences: List[str] = Field(
+    healthcare_notes: List[str] = Field(
         default_factory=list,
-        description="The music preferences of the customer (artists, genres, albums they like)",
+        description="The healthcare notes of the customer (medical conditions, equipment needed, location)",
     )

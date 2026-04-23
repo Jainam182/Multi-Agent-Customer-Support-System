@@ -1,18 +1,18 @@
 """Graph builder module. Assembles the complete multi-agent LangGraph workflow."""
 
 import logging
-from langchain_openai import ChatOpenAI
+from langchain_groq import ChatGroq
 from langgraph.graph import StateGraph, START, END
 from langgraph.prebuilt import ToolNode, create_react_agent
 from langgraph.checkpoint.memory import MemorySaver
 from langgraph.store.memory import InMemoryStore
 
 from src.state import State
-from src.tools import music_tools, invoice_tools
-from src.agents.prompts import INVOICE_SUBAGENT_PROMPT, SUPERVISOR_PROMPT
+from src.tools.equipment_catalog import equipment_tools
+from src.tools.order_support import order_support_tools
+from src.agents.prompts import ORDER_SUBAGENT_PROMPT, SUPERVISOR_PROMPT
 from src.agents.nodes import (
-    create_music_assistant_node,
-    should_continue,
+    equipment_state_modifier,
     should_interrupt,
     create_verify_info_node,
     human_input,
@@ -24,21 +24,18 @@ logger = logging.getLogger(__name__)
 
 
 def build_graph(
-    model_name: str = "gpt-4o-mini",
+    model_name: str = "llama-3.1-8b-instant",
     temperature: float = 0,
-    openai_api_key: str = None,
-    openai_api_base: str = None,
+    groq_api_key: str = None,
 ):
     llm_kwargs = {
         "model": model_name,
         "temperature": temperature,
     }
-    if openai_api_key:
-        llm_kwargs["api_key"] = openai_api_key
-    if openai_api_base:
-        llm_kwargs["base_url"] = openai_api_base
+    if groq_api_key:
+        llm_kwargs["api_key"] = groq_api_key
 
-    llm = ChatOpenAI(**llm_kwargs)
+    llm = ChatGroq(**llm_kwargs)
     logger.info(f"LLM initialized: {model_name}, temperature={temperature}")
 
     # NOTE: Both stores are in-memory only — all data is lost on restart.
@@ -46,45 +43,35 @@ def build_graph(
     in_memory_store = InMemoryStore()
     checkpointer = MemorySaver()
 
-    # Music Catalog Sub-Agent (hand-built ReAct)
-    music_assistant_fn = create_music_assistant_node(llm, music_tools)
-    music_tool_node = ToolNode(music_tools)
-
-    music_workflow = StateGraph(State)
-    music_workflow.add_node("music_assistant", music_assistant_fn)
-    music_workflow.add_node("music_tool_node", music_tool_node)
-    music_workflow.add_edge(START, "music_assistant")
-    music_workflow.add_conditional_edges(
-        "music_assistant",
-        should_continue,
-        {"continue": "music_tool_node", "end": END},
-    )
-    music_workflow.add_edge("music_tool_node", "music_assistant")
-
-    music_catalog_subagent = music_workflow.compile(
-        name="music_catalog_subagent",
-        checkpointer=checkpointer,
-        store=in_memory_store,
-    )
-    logger.info("Music catalog sub-agent compiled.")
-
-    # Invoice Information Sub-Agent (pre-built ReAct)
-    invoice_information_subagent = create_react_agent(
+    # Equipment Catalog Sub-Agent (pre-built ReAct)
+    equipment_catalog_subagent = create_react_agent(
         llm,
-        tools=invoice_tools,
-        name="invoice_information_subagent",
-        prompt=INVOICE_SUBAGENT_PROMPT,
+        tools=equipment_tools,
+        name="equipment_catalog_subagent",
+        prompt=equipment_state_modifier,
         state_schema=State,
         checkpointer=checkpointer,
         store=in_memory_store,
     )
-    logger.info("Invoice information sub-agent compiled.")
+    logger.info("Equipment catalog sub-agent compiled.")
+
+    # Order Information Sub-Agent (pre-built ReAct)
+    order_information_subagent = create_react_agent(
+        llm,
+        tools=order_support_tools,
+        name="order_information_subagent",
+        prompt=ORDER_SUBAGENT_PROMPT,
+        state_schema=State,
+        checkpointer=checkpointer,
+        store=in_memory_store,
+    )
+    logger.info("Order information sub-agent compiled.")
 
     # Supervisor
     from langgraph_supervisor import create_supervisor
 
     supervisor_workflow = create_supervisor(
-        agents=[invoice_information_subagent, music_catalog_subagent],
+        agents=[order_information_subagent, equipment_catalog_subagent],
         output_mode="last_message",
         model=llm,
         prompt=SUPERVISOR_PROMPT,

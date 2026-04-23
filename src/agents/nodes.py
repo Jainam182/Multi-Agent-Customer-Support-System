@@ -11,7 +11,7 @@ from langgraph.types import interrupt
 from src.state import State
 from src.models import UserInput, UserProfile
 from src.agents.prompts import (
-    generate_music_assistant_prompt,
+    EQUIPMENT_SUBAGENT_PROMPT,
     STRUCTURED_EXTRACTION_PROMPT,
     VERIFICATION_PROMPT,
     CREATE_MEMORY_PROMPT,
@@ -69,40 +69,24 @@ def get_customer_id_from_identifier(identifier: str) -> Optional[int]:
 def format_user_memory(user_data: dict) -> str:
     try:
         profile = user_data.get("memory")
-        if profile and hasattr(profile, "music_preferences") and profile.music_preferences:
-            return f"Music Preferences: {', '.join(profile.music_preferences)}"
+        if profile and hasattr(profile, "healthcare_notes") and profile.healthcare_notes:
+            return f"Healthcare Notes: {', '.join(profile.healthcare_notes)}"
     except Exception as e:
         logger.error(f"Error formatting user memory: {e}")
     return ""
 
 
-def create_music_assistant_node(llm, music_tools):
-    llm_with_tools = llm.bind_tools(music_tools)
-
-    def music_assistant(state: State, config: RunnableConfig):
-        memory = state.get("loaded_memory", "None") or "None"
-        prompt = generate_music_assistant_prompt(memory)
-
-        messages = [SystemMessage(content=prompt)]
-        if state.get("customer_id"):
-            messages.append(
-                SystemMessage(content=f"The current verified customer ID is: {state['customer_id']}")
-            )
-        messages.extend(state["messages"])
-
-        logger.info(f"Music assistant invoked with {len(state['messages'])} conversation messages")
-        response = llm_with_tools.invoke(messages)
-        return {"messages": [response]}
-
-    return music_assistant
-
-
-def should_continue(state: State, config: RunnableConfig) -> str:
-    messages = state["messages"]
-    last_message = messages[-1]
-    if not last_message.tool_calls:
-        return "end"
-    return "continue"
+def equipment_state_modifier(state: State):
+    memory = state.get("loaded_memory", "None") or "None"
+    prompt_str = EQUIPMENT_SUBAGENT_PROMPT.format(memory=memory)
+    
+    messages = [SystemMessage(content=prompt_str)]
+    if state.get("customer_id"):
+        messages.append(
+            SystemMessage(content=f"The current verified customer ID is: {state['customer_id']}")
+        )
+    messages.extend(state.get("messages", []))
+    return messages
 
 
 def should_interrupt(state: State, config: RunnableConfig) -> str:
@@ -196,9 +180,9 @@ def create_memory_node(llm):
             if existing_memory and existing_memory.value:
                 mem_dict = existing_memory.value
                 profile = mem_dict.get("memory")
-                if profile and hasattr(profile, "music_preferences"):
-                    existing_preferences = list(profile.music_preferences or [])
-                    formatted_memory = f"Music Preferences: {', '.join(existing_preferences)}"
+                if profile and hasattr(profile, "healthcare_notes"):
+                    existing_preferences = list(profile.healthcare_notes or [])
+                    formatted_memory = f"Healthcare Notes: {', '.join(existing_preferences)}"
 
             recent_messages = state["messages"][-10:]
             conversation_summary = "\n".join(
@@ -216,13 +200,13 @@ def create_memory_node(llm):
                 [SystemMessage(content=formatted_prompt)]
             )
 
-            new_prefs = updated_memory.music_preferences or []
+            new_prefs = updated_memory.healthcare_notes or []
             if not new_prefs and existing_preferences:
                 logger.info(f"Memory unchanged for customer {user_id} (preserving existing preferences)")
                 return {}
 
             merged_prefs = list(set(existing_preferences + new_prefs))
-            updated_memory.music_preferences = merged_prefs
+            updated_memory.healthcare_notes = merged_prefs
             updated_memory.customer_id = user_id
 
             store.put(namespace, "user_memory", {"memory": updated_memory})
