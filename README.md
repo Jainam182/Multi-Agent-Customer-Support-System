@@ -165,5 +165,5 @@ pytest tests/ -v
 ---
 
 <div align="center">
-  <sub>Built and maintained by <b>jaina</b> · LangGraph · Gradio</sub>
+  <sub>Built and maintained by <b>Jainam182</b> · LangGraph · Gradio</sub>
 </div>
