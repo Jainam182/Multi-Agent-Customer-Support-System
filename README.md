@@ -52,8 +52,6 @@ The multi-agent assistant is designed to support the following critical user jou
 
 ## System Architecture
 
-### High Level System Architecture
-
 ```mermaid
 flowchart TD
     User([User])
