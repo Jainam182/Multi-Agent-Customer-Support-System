@@ -14,7 +14,7 @@ pinned: false
 
 A production-grade, **LangGraph-powered hierarchical multi-agent assistant** for **Arihant Healthcare**, a B2B/B2C medical equipment supply business. It combines a **Supervisor router**, two specialized **ReAct sub-agents** (equipment catalog + order tracking), **human-in-the-loop identity verification**, **long-term per-customer memory**, and a **Gradio chat UI** - all backed by a real relational schema for medical supplies.
 
-**Live Demo:** [huggingface.co/spaces/jaina/Multi-Agent-Customer-Support](https://huggingface.co/spaces/jainam182/Multi-Agent-Customer-Support)
+**Live Demo:** [huggingface.co/spaces/jaina/Multi-Agent-Customer-Support](https://huggingface.co/spaces/Jainam182/Multi-Agent-Customer-Support)
 
 ---
 
